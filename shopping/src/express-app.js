@@ -1,10 +1,9 @@
 const cors = require("cors");
-const { shoppingApi, appEvents } = require("../src/api");
+const { shoppingApi } = require("../src/api");
 
-module.exports = async (app, express) => {
+module.exports = async (app, express, channel) => {
   app.use(cors());
 
   app.use(express.json());
-  await shoppingApi(app);
-  await appEvents(app);
+  await shoppingApi(app, channel);
 };

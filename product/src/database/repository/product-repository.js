@@ -1,4 +1,5 @@
 const ProductModel = require("../model/Product");
+const { ObjectId } = require("mongodb");
 
 class ProductRepository {
   async createProduct({
@@ -23,9 +24,9 @@ class ProductRepository {
         supplier,
       });
       await product.save();
-      if (!product) throw new Error("there is tech issue");
-      return { response: product, code: 200 };
+      return { response: product, message: "inserted", code: 200 };
     } catch (e) {
+      console.log(e.message);
       return { response: e.message, code: 400 };
     }
   }
@@ -33,8 +34,7 @@ class ProductRepository {
   async fetchProduct() {
     try {
       const product = await ProductModel.find({});
-      if (!product) throw new Error("There is tech issue");
-      return { response: product, code: 200 };
+      return { response: product, code: 200, message: "product fetched" };
     } catch (e) {
       return { response: e.message, code: 400 };
     }
@@ -69,6 +69,16 @@ class ProductRepository {
       return { response: product, code: 200 };
     } catch (e) {
       return { response: e.message, code: 400 };
+    }
+  }
+
+  async deleteProduct({ productId }) {
+    try {
+      let product = await ProductModel.deleteOne(new ObjectId(productId));
+      console.log(productId);
+      return { response: product, message: "Deleted successfully", code: 200 };
+    } catch (e) {
+      return { response: "", message: e.message, code: 400 };
     }
   }
 }

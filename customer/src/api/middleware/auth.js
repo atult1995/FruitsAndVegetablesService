@@ -12,7 +12,7 @@ const auth = async (req, res, next) => {
 
     const { response, message, code } =
       await customerService.getCustomerByIdAndToken({
-        _id: decode._id,
+        customerId: decode._id,
         token,
       });
 

@@ -56,21 +56,22 @@ class CustomerService {
   }
 
   async deleteCartItems(userInputs) {
-    const { response, code } = await this.repository.deleteCartItems(
+    const { response, message, code } = await this.repository.deleteCartItems(
       userInputs
     );
-    return { response, code };
+    return { response, message, code };
   }
   async deleteWishlistItems(userInputs) {
-    const { response, code } = await this.repository.deleteWishlistItems(
-      userInputs
-    );
-    return { response, code };
+    const { response, message, code } =
+      await this.repository.deleteWishlistItems(userInputs);
+    return { response, message, code };
   }
 
   async deleteCartItem(userInputs) {
-    const { response, code } = await this.repository.deleteCartItem(userInputs);
-    return { response, code };
+    const { response, message, code } = await this.repository.deleteCartItem(
+      userInputs
+    );
+    return { response, message, code };
   }
 
   async deleteWishlistItem(userInputs) {
@@ -99,24 +100,36 @@ class CustomerService {
     );
     return { response, message, code };
   }
+  async increaseCartQuantity(userInputs) {
+    const { response, message, code } = await this.repository.incCartQty(
+      userInputs
+    );
+    return { response, message, code };
+  }
+  async decreaseCartQuantity(userInputs) {
+    const { response, message, code } = await this.repository.decCartQty(
+      userInputs
+    );
+    return { response, message, code };
+  }
 
   async SubscribeEvents(payload) {
     const { data, event } = payload;
-    console.log(data, event);
     switch (event) {
       case "ADD_TO_WISHLIST":
-        return this.addToWishlist(data);
+        this.addToWishlist(data);
       case "ADD_TO_CART":
-        return this.addToCart(data);
-      case "REMOVE_FROM_WISHLIST":
-        break;
+        this.addToCart(data);
       case "REMOVE_FROM_CART":
+        this.deleteCartItem(data);
         break;
       case "CLEAR_CART":
-        return this.deleteCartItems(data);
-      case "CLEAR_WISHLIST":
+        this.deleteCartItems(data);
+      case "INC_QTY":
+        this.increaseCartQuantity(data);
         break;
-      case "GET_USER_BY_ID":
+      case "DEC_QTY":
+        this.decreaseCartQuantity(data);
         break;
       case "CREATE_ORDER":
         return this.createOrder(data);
