@@ -16,6 +16,9 @@ class ProductService {
   async fetchProductById({ _id }) {
     return await this.repository.fetchProductById({ _id });
   }
+  async deleteProduct(userInput) {
+    return await this.repository.deleteProduct(userInput);
+  }
 }
 
 module.exports = ProductService;

@@ -3,6 +3,7 @@ const validator = require("validator");
 const bcryptjs = require("bcryptjs");
 const { SECRET, PORT } = require("../../config");
 const { generateAuthToken } = require("../../utils");
+const jwt = require("jsonwebtoken");
 
 const Schema = mongoose.Schema;
 const CustomerSchema = new Schema(
@@ -35,13 +36,12 @@ const CustomerSchema = new Schema(
         token: String,
       },
     ],
-    address: [
-      {
+    address: {
+      addressId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "address",
-        required: true,
       },
-    ],
+    },
     cart: [
       {
         product: {
@@ -77,9 +77,7 @@ const CustomerSchema = new Schema(
         delete ret.password,
           delete ret.tokens,
           delete ret.__v,
-          delete ret.wishlist,
-          delete ret.cart;
-        delete ret.order;
+          delete ret.order;
       },
     },
     timestamps: true,
@@ -88,12 +86,22 @@ const CustomerSchema = new Schema(
 
 CustomerSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
-    this.password = await bcryptjs.hash(this.password, "7");
+    this.password = await bcryptjs.hash(this.password, 7);
   }
   next();
 });
 
-CustomerSchema.methods.generateAuthToken = generateAuthToken;
+CustomerSchema.methods.generateAuthToken = async function () {
+  const token = jwt.sign({ _id: this._id.toString() }, "thisismykey", {
+    expiresIn: "7 days",
+  });
+  this.tokens = this.tokens.concat({ token });
+  await this.save();
+  if (!this) {
+    throw new Error("There is error while logging, try again later");
+  }
+  return token;
+};
 
 CustomerSchema.statics.findByCred = async (email, password) => {
   try {

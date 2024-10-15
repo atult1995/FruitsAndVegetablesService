@@ -1,49 +1,33 @@
+const { CUSTOMER_BINDING_KEY } = require("../config");
 const { ShoppingService } = require("../service");
-const { PublishCustomerEvent, LOGGED_IN_USER } = require("../utils");
+const { SubscribeMessage, PublishMessage } = require("../utils");
 const auth = require("./middleware/auth");
 
-module.exports = async (app) => {
+module.exports = async (app, channel) => {
   const shoppingService = new ShoppingService();
+
+  SubscribeMessage(channel, shoppingService);
+
   app.post("/create-order", auth, async (req, res) => {
     const { response, message, code } = await shoppingService.createOrder({
-      customerId: LOGGED_IN_USER.user._id,
+      customerId: req._id,
     });
 
     const data = {
-      _id: response.customerId,
+      customerId: response.customerId,
       orderId: response.orderId,
       amount: response.amount,
       date: response.timestamp,
     };
-    console.log(data);
-    if (code === 200) {
-      const publishCustomerResponse = await PublishCustomerEvent({
-        data,
-        event: "CREATE_ORDER",
-        headers: {
-          Authorization: "Bearer " + LOGGED_IN_USER.token,
-        },
-      });
-
-      if (publishCustomerResponse.status === 200) {
-        res.status(publishCustomerResponse.status).send({
-          response,
-          message: message + " and " + publishCustomerResponse.data.message,
-          code,
-        });
-      } else {
-        res.status(publishCustomerResponse.status).send({
-          message: publishCustomerResponse.response.data,
-          code: publishCustomerResponse.status,
-          response: "",
-        });
-      }
-    } else {
-      res.status(code).send({ response, message, code });
-    }
+    PublishMessage(
+      channel,
+      CUSTOMER_BINDING_KEY,
+      JSON.stringify({ data, event: "CREATE_ORDER" })
+    );
+    res.status(code).send({ response, message, code });
   });
 
-  app.post("/add-to-cart", auth, async (req, res) => {
+  app.post("/cart", auth, async (req, res) => {
     const {
       productId,
       name,
@@ -54,7 +38,7 @@ module.exports = async (app) => {
       price,
       supplier,
     } = req.body;
-    const customerId = LOGGED_IN_USER.user._id;
+    const customerId = req._id;
     const { response, message, code } = await shoppingService.addItemToCart({
       productId,
       name,
@@ -79,14 +63,14 @@ module.exports = async (app) => {
 
   app.delete("/cart", auth, async (req, res) => {
     const { response, message, code } = await shoppingService.deleteCartItems({
-      customerId: LOGGED_IN_USER.user._id,
+      customerId: req._id,
     });
     res.status(code).send({ response, message, code });
   });
 
   app.delete("/cart/:id", auth, async (req, res) => {
     const { response, message, code } = await shoppingService.deleteCartItem({
-      customerId: LOGGED_IN_USER.user._id,
+      customerId: req._id,
       productId: req.params.id,
     });
     res.status(code).send({ response, message, code });
@@ -94,7 +78,7 @@ module.exports = async (app) => {
 
   app.get("/cart", auth, async (req, res) => {
     const { response, message, code } = await shoppingService.getCustomerCart({
-      customerId: LOGGED_IN_USER.user._id,
+      customerId: req._id,
     });
     res.status(code).send({ response, message, code });
   });

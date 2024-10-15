@@ -1,14 +1,24 @@
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
+
+const amqplib = require("amqplib");
+const {
+  MESSAGE_BROKER_URL,
+  CUSTOMER_BINDING_KEY,
+  EXCHANGE_NAME,
+  QUEUE_NAME,
+} = require("../config");
+
 const generateAuthToken = async function () {
   if (!this) throw Error("There is error");
-  console.log(process.env.SECRET_CODE);
   const token = jwt.sign({ _id: this._id }, "thisismykey", {
     expiresIn: "7 day",
   });
 
   this.tokens = this.tokens.concat({ token });
+
   await this.save();
+
   return token;
 };
 
@@ -24,69 +34,43 @@ const PublishUserLoggedInOutEvent = async (payload) => {
   }
 };
 
-const supportFunctionForLoginUser = async ({
-  response,
-  code,
-  message,
-  res,
-}) => {
-  if (code === 200) {
-    const publishLogResponse = await PublishUserLoggedInOutEvent({
-      data: { user: response.user, token: response.token },
-      event: "USER_LOGGED_IN",
-    });
+//message broker
 
-    if (publishLogResponse.status === 200) {
-      res.status(publishLogResponse.status).send({
-        response,
-        message: message + " and " + publishLogResponse.data.message,
-        code,
-      });
-    } else {
-      res.status(publishLogResponse.status).send({
-        message: publishLogResponse.response.data,
-        code: publishLogResponse.status,
-        response: "",
-      });
-    }
-  } else {
-    res.status(code).send({ response, message, code });
+//1. create channel
+const CreateChannel = async () => {
+  try {
+    const connect = await amqplib.connect(MESSAGE_BROKER_URL);
+    const channel = await connect.createChannel();
+    await channel.assertExchange(EXCHANGE_NAME, "direct", false);
+    return channel;
+  } catch (e) {
+    throw e;
   }
 };
 
-const supportFunctionForLogoutUser = async ({
-  response,
-  code,
-  message,
-  res,
-}) => {
-  if (code === 200) {
-    const publishLogResponse = await PublishUserLoggedInOutEvent({
-      data: { user: "", token: "" },
-      event: "USER_LOGGED_OUT",
-    });
+// //2. publish message
+// module.exports.PublishMessage = async (channel, binding_key, message) => {
+//   try {
+//     await channel.publish(EXCHANGE_NAME, binding_key, Buffer.from(message));
+//   } catch (e) {
+//     throw e;
+//   }
+// };
 
-    if (publishLogResponse.status === 200) {
-      res.status(publishLogResponse.status).send({
-        response,
-        message: message + " and " + publishLogResponse.data.message,
-        code,
-      });
-    } else {
-      res.status(publishLogResponse.status).send({
-        message: publishLogResponse.response.data,
-        code: publishLogResponse.status,
-        response: "",
-      });
-    }
-  } else {
-    res.status(code).send({ response, message, code });
-  }
+//3. subscribe message
+const SubscribeMessage = async (channel, service) => {
+  const appQueue = await channel.assertQueue(QUEUE_NAME);
+  channel.bindQueue(appQueue.queue, EXCHANGE_NAME, CUSTOMER_BINDING_KEY);
+  channel.consume(appQueue.queued, (data) => {
+    console.log("Received  data");
+
+    service.SubscribeEvents(JSON.parse(data.content.toString()));
+    channel.ack(data);
+  });
 };
 
 module.exports = {
   generateAuthToken,
-  PublishUserLoggedInOutEvent,
-  supportFunctionForLoginUser,
-  supportFunctionForLogoutUser,
+  CreateChannel,
+  SubscribeMessage,
 };

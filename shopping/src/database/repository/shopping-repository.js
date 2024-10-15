@@ -54,7 +54,6 @@ class ShoppingRepository {
   }) {
     try {
       const cart = await CartModel.findOne({ customerId });
-      console.log(cart);
       if (cart) {
         cart.cart.push({
           product: {
@@ -138,8 +137,9 @@ class ShoppingRepository {
   async deleteCartItem({ customerId, productId }) {
     try {
       const cart = await CartModel.findOne({ customerId });
-      if (!cart) throw new Error("Cart was not found");
+
       cart.cart = cart.cart.filter((item) => item.product._id !== productId);
+      console.log("deleted", cart);
       await cart.save();
       return { response: cart, message: "Cart is cleared", code: 200 };
     } catch (e) {
@@ -148,14 +148,48 @@ class ShoppingRepository {
   }
 
   async getCustomerCart({ customerId }) {
+    console.log("==== retriving =====");
+    console.log(customerId);
     try {
-      console.log(customerId);
       const cart = await CartModel.findOne({ customerId });
       console.log(cart);
-      if (!cart) throw new Error("Cart was not found");
       return { response: cart.cart, message: "Cart fetched", code: 200 };
     } catch (e) {
       return { response: "", message: e.message, code: 400 };
+    }
+  }
+  async incCartQty({ customerId, productId }) {
+    try {
+      const cart = await CartModel.findOne({ customerId });
+
+      cart.cart.forEach((c) => {
+        if (c.product._id === productId) {
+          c.unit += 1;
+          return;
+        }
+      });
+
+      await cart.save();
+      return { response: cart.cart, message: "Updated quantity", code: 200 };
+    } catch (e) {
+      return { response: "", message: " cart not found", code: 400 };
+    }
+  }
+  async decCartQty({ customerId, productId }) {
+    try {
+      const cart = await CartModel.findOne({ customerId });
+      cart.cart.forEach((c) => {
+        if (c.product._id === productId) {
+          c.unit -= 1;
+          if (c.unit === 0) {
+            cart.cart = cart.cart.filter((c) => c._id === productId);
+          }
+        }
+      });
+      await cart.save();
+      return { response: user.cart, message: "Updated quantity", code: 200 };
+    } catch (e) {
+      return { response: "", message: "cart not found", code: 400 };
     }
   }
 }

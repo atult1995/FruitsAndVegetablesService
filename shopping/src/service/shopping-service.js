@@ -47,43 +47,33 @@ class ShoppingService {
     return { response, message, code };
   }
 
-  ShoppingEvents({ data, event }) {
+  async increaseCartQuantity(userInputs) {
+    const { response, message, code } = await this.repository.incCartQty(
+      userInputs
+    );
+    return { response, message, code };
+  }
+  async decreaseCartQuantity(userInputs) {
+    const { response, message, code } = await this.repository.decCartQty(
+      userInputs
+    );
+    return { response, message, code };
+  }
+
+  SubscribeEvents({ data, event }) {
     switch (event) {
       case "ADD_TO_CART":
-        return this.addItemToCart(data);
-      case "USER_LOGGED_IN":
-        LOGGED_IN_USER.user = data.user;
-        LOGGED_IN_USER.token = data.token;
-        if (LOGGED_IN_USER.user?._id !== "" && LOGGED_IN_USER.token !== "") {
-          return {
-            response: "",
-            message: "Notification has got in shopping side",
-            code: 200,
-          };
-        } else {
-          return {
-            response: "",
-            message: "Notification has got but unable to push in shopping side",
-            code: 400,
-          };
-        }
-      case "USER_LOGGED_OUT":
-        console.log;
-        LOGGED_IN_USER.user = {};
-        LOGGED_IN_USER.token = "";
-        if (!LOGGED_IN_USER.user?.id && LOGGED_IN_USER.token === "") {
-          return {
-            response: "",
-            message: "Notification has got in shopping side",
-            code: 200,
-          };
-        } else {
-          return {
-            response: "",
-            message: "Notification has got but unable to push in shopping side",
-            code: 400,
-          };
-        }
+        this.addItemToCart(data);
+        break;
+      case "REMOVE_FROM_CART":
+        this.deleteCartItem(data);
+        break;
+      case "INC_QTY":
+        this.increaseCartQuantity(data);
+        break;
+      case "DEC_QTY":
+        this.decreaseCartQuantity(data);
+        break;
     }
   }
 }

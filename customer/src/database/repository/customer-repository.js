@@ -33,40 +33,35 @@ class CustomerRepository {
         email,
         password
       );
-      if (code === globalVar.CODE.SUCCESS) {
-        const token = await response.generateAuthToken();
-        return { response: { user: response, token }, code, message };
-      } else {
-        return { response, code, message };
-      }
+      const token = await response.generateAuthToken();
+      return { response: { user: response, token }, code, message };
     } catch (e) {
       return { response: "", code: 400, message: e.message };
     }
   }
 
-  async createAddress({ _id, street, postalCode, country }) {
+  async createAddress({ customerId: _id, street, postalCode, country }) {
     try {
-      console.log(_id);
       const profile = await CustomerModel.findById(_id);
-      if (profile) {
-        const address = await new AddressModel({
-          street,
-          country,
-          postalCode,
-          country,
-        });
-        await address.save();
-        profile.address.push(address);
-        await profile.save();
-        return { response: address, code: 200 };
-      }
-      throw new Error("there is tech issue");
+      const address = await new AddressModel({
+        street,
+        country,
+        postalCode,
+        country,
+      });
+      await address.save();
+      //profile.address.push(address);
+      profile.address = {
+        addressId: address._id,
+      };
+      await profile.save();
+      return { response: address, message: "Created address", code: 200 };
     } catch (e) {
-      return { response: e.message, code: 400 };
+      return { response: "", message: e.message, code: 400 };
     }
   }
   async addToWishlist({
-    _id,
+    customerId: _id,
     productId,
     banner,
     description,
@@ -75,7 +70,6 @@ class CustomerRepository {
   }) {
     try {
       const user = await CustomerModel.findById(_id);
-      if (!user) throw new Error("User was not found");
       user.wishlist.push({
         _id: productId,
         banner,
@@ -84,16 +78,26 @@ class CustomerRepository {
         price,
       });
       await user.save();
-      return { response: user.wishlist, code: 200 };
+      return {
+        response: user.wishlist,
+        message: "fetched wishlist",
+        code: 200,
+      };
     } catch (e) {
-      return { response: e.message, code: 400 };
+      return { response: "", message: e.message, code: 400 };
     }
   }
 
-  async addToCartList({ _id, productId, banner, price, name, unit }) {
+  async addToCartList({
+    customerId: _id,
+    productId,
+    banner,
+    price,
+    name,
+    unit,
+  }) {
     try {
       const user = await CustomerModel.findById(_id);
-      if (!user) throw new Error("User was not found");
       user.cart.push({
         product: {
           _id: productId,
@@ -111,99 +115,147 @@ class CustomerRepository {
     }
   }
 
-  async getCustomerByIdAndToken({ _id, token }) {
-    console.log(_id);
-    console.log(token);
+  async getCustomerByIdAndToken({ customerId: _id, token }) {
     try {
       const user = await CustomerModel.findOne({ _id, "tokens.token": token });
-      console.log(user);
-      if (!user) throw new Error("User was not found");
+
       return { response: user, message: "User found", code: 200 };
     } catch (e) {
       return { response: "", message: e.message, code: 400 };
     }
   }
-  async getCustomerAddress({ _id }) {
+  async getCustomerAddress({ customerId: _id }) {
     try {
       const user = await CustomerModel.findById(_id);
-      if (!user) throw new Error("User was not found");
-      return { response: user.cart, code: 200 };
+      const address = await AddressModel.findById(user.address);
+      return {
+        response: user.cart,
+        message: "fetched user address ",
+        code: 200,
+      };
     } catch (e) {
-      return { response: e.message, code: 400 };
+      return { response: "", message: e.message, code: 400 };
     }
   }
 
-  async getCustomerCart({ _id }) {
+  async getCustomerCart({ customerId: _id }) {
     try {
-      console.log(_id);
       const user = await CustomerModel.findById(_id.toString());
       if (!user) throw new Error("User was not found");
-      return { response: user.cart, code: 200 };
+      return {
+        response: user.cart,
+        message: "fetched customer cart",
+        code: 200,
+      };
     } catch (e) {
-      return { response: e.message, code: 400 };
-    }
-  }
-  async getCustomerWishlist({ _id }) {
-    try {
-      const user = await CustomerModel.findById(_id);
-      if (!user) throw new Error("User was not found");
-      return { response: user.wishlist, code: 200 };
-    } catch (e) {
-      return { response: e.message, code: 400 };
+      return { response: "", message: e.message, code: 400 };
     }
   }
 
-  async deleteCartItems({ _id }) {
+  async incCartQty({ customerId: _id, productId }) {
+    try {
+      const user = await CustomerModel.findById(_id);
+      user.cart.forEach((cart) => {
+        if (cart.product._id === productId) {
+          cart.unit += 1;
+          return;
+        }
+      });
+      await user.save();
+      return { response: user.cart, message: "Updated quantity", code: 200 };
+    } catch (e) {
+      return { response: "", message: "user or cart not found", code: 400 };
+    }
+  }
+  async decCartQty({ customerId: _id, productId }) {
+    try {
+      const user = await CustomerModel.findById(_id);
+      user.cart.forEach((cart) => {
+        if (cart.product._id === productId) {
+          cart.unit -= 1;
+          if (cart.unit === 0) {
+            user.cart = user.cart.filter((c) => c._id === productId);
+          }
+        }
+      });
+      await user.save();
+      return { response: user.cart, message: "Updated quantity", code: 200 };
+    } catch (e) {
+      return { response: "", message: "user or cart not found", code: 400 };
+    }
+  }
+
+  async getCustomerWishlist({ customerId: _id }) {
+    try {
+      const user = await CustomerModel.findById(_id);
+      if (!user) throw new Error("User was not found");
+      return {
+        response: user.wishlist,
+        message: "fetched wishlist",
+        code: 200,
+      };
+    } catch (e) {
+      return { response: "", message: e.message, code: 400 };
+    }
+  }
+
+  async deleteCartItems({ customerId: _id }) {
     try {
       const user = await CustomerModel.findById(_id);
       if (!user) throw new Error("User was not found");
       user.cart = [];
       await user.save();
-      return { response: user.cart, code: 200 };
+      return { response: user.cart, message: "cleared cart", code: 200 };
     } catch (e) {
-      return { response: e.message, code: 400 };
+      return { response: "", message: e.message, code: 400 };
     }
   }
-  async deleteWishlistItems({ _id }) {
+  async deleteWishlistItems({ customerId: _id, productId }) {
     try {
       const user = await CustomerModel.findById(_id);
-      if (!user) throw new Error("User was not found");
-      user.wishlist = [];
+      user.wishlist = user.wishlist.filter((wish) => wish._id !== productId);
       await user.save();
-      return { response: user.wishlist, code: 200 };
+      return {
+        response: user.wishlist,
+        message: "cleared wishlist",
+        code: 200,
+      };
     } catch (e) {
-      return { response: e.message, code: 400 };
+      return { response: "", message: e.message, code: 400 };
     }
   }
-  async deleteCartItem({ _id, productId }) {
+  async deleteCartItem({ customerId: _id, productId }) {
     try {
       const user = await CustomerModel.findById(_id);
       if (!user) throw new Error("User was not found");
       user.cart = user.cart.filter((item) => item.product._id !== productId);
       await user.save();
-      return { response: user.cart, code: 200 };
+      return { response: user.cart, message: "removed from cart ", code: 200 };
     } catch (e) {
-      return { response: e.message, code: 400 };
+      return { response: "", message: e.message, code: 400 };
     }
   }
 
-  async deleteWishlistItem({ _id, productId }) {
+  async deleteWishlistItem({ customerId: _id, productId }) {
     try {
       const user = await CustomerModel.findById(_id);
       if (!user) throw new Error("User was not found");
       user.cart = user.wishlist.filter((item) => item._id !== productId);
       await user.save();
-      return { response: user.wishlist, code: 200 };
+      return {
+        response: user.wishlist,
+        message: "Removed from wishlist",
+        code: 200,
+      };
     } catch (e) {
-      return { response: e.message, code: 400 };
+      return { response: "", message: e.message, code: 400 };
     }
   }
 
-  async customerLogout({ _id, token }) {
-    console.log(_id, token);
+  async customerLogout({ customerId: _id, token }) {
     try {
       const user = await CustomerModel.findById(_id);
-      console.log(user);
+
       if (!user) throw new Error("User was not found");
 
       user.tokens = user.tokens.filter((t) => t.token !== token);
@@ -213,7 +265,7 @@ class CustomerRepository {
       return { response: "", message: e.message, code: 400 };
     }
   }
-  async customerLogoutFromAllTheSession({ _id, token }) {
+  async customerLogoutFromAllTheSession({ customerId: _id, token }) {
     try {
       const user = await CustomerModel.findById(_id);
       if (!user) throw new Error("User was not found");
@@ -230,13 +282,13 @@ class CustomerRepository {
     }
   }
 
-  async createOrder({ _id, orderId, amount }) {
-    console.log(_id, orderId, amount);
+  async createOrder({ customerId: _id, orderId, amount }) {
     try {
       const user = await CustomerModel.findById(_id);
       if (!user) throw new Error("User was not found");
 
       user.orders.push({ _id: orderId, amount, date: new Date() });
+      user.cart = [];
       await user.save();
       return {
         response: "",

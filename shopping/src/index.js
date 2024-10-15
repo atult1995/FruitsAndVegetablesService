@@ -2,6 +2,7 @@ const express = require("express");
 
 const expressApp = require("./express-app");
 const { databaseConnection } = require("./database");
+const { CreateChannel } = require("../src/utils");
 
 const createServer = async () => {
   const app = express();
@@ -10,7 +11,8 @@ const createServer = async () => {
   // });
 
   await databaseConnection();
-  await expressApp(app, express);
+  const channel = await CreateChannel();
+  await expressApp(app, express, channel);
   app.listen(process.env.PORT, () => {
     console.log("Listening at port", process.env.PORT);
   });
