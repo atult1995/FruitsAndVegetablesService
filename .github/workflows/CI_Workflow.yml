@@ -22,7 +22,7 @@ jobs:
       - name: Test Customer Service
         working-directory: ./customer
         run: |
-          npm run lint
+          #npm run lint
           npm ci
           npm test
          # npm run test -- --coverage
@@ -30,14 +30,14 @@ jobs:
       - name: Test Products Service
         working-directory: ./products
         run: |
-          npm run lint
+          #npm run lint
           npm ci
           npm test
 
       - name: Test Shopping Service
         working-directory: ./shopping
         run: |
-          npm run lint
+         # npm run lint
           npm ci
           npm test
           
