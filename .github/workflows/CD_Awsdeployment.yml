@@ -7,8 +7,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-	
-
 
     steps:
     # Step 1: Checkout the repository
@@ -18,40 +16,40 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '18.x'  # Specify the Node.js version you use
+        node-version: '18.x'  # Ensure this matches your project's requirement
 
     # Step 3: Install dependencies for all microservices
     - name: Install dependencies for customer service
-      working-directory: ./customer  # Navigate to the customer service directory
+      working-directory: ./customer
       run: npm install
 
     - name: Install dependencies for product service
-      working-directory: ./product  # Navigate to the product service directory
+      working-directory: ./product
       run: npm install
 
     - name: Install dependencies for shopping service
-      working-directory: ./shopping  # Navigate to the shopping service directory
+      working-directory: ./shopping
       run: npm install
 
-    # Step 4: Deploy to AWS EC2 or another remote server
+    # Step 4: Deploy to AWS EC2
     - name: Deploy to AWS EC2
       uses: appleboy/scp-action@master
       with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "./*"  # Source is the root directory of the repository
-        target: "/FruitsAndVegetablesService"  # Target directory on the remote server
+        host: "ec2-16-171-132-49.eu-north-1.compute.amazonaws.com"
+        username: "ec2-user"
+        key: ${{ secrets.SSH_PRIVATE_KEY }}  # Use secrets to store sensitive info
+        source: "./*"  # Make sure this is correct
+        target: "/FruitsAndVegetablesService"
 
-    # Step 5: Restart the application using Docker Compose
+    # Step 5: Restart services with Docker Compose
     - name: Restart services with Docker Compose
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
+        host: "ec2-16-171-132-49.eu-north-1.compute.amazonaws.com"
+        username: "ec2-user"
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd FruitsAndVegetablesService  # Change to the directory where the app is deployed
+          cd /FruitsAndVegetablesService  # Correct path
           docker-compose down  # Stop running services
           docker-compose build  # Build the Docker images
           docker-compose up -d  # Start the services in detached mode
