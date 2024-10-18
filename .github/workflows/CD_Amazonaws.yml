@@ -35,9 +35,59 @@ jobs:
     - name: Deploy to AWS EC2
       uses: appleboy/scp-action@master
       with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        host: "ec2-16-171-132-49.eu-north-1.compute.amazonaws.com"
+        username: "ec2-user"
+        key: |
+          -----BEGIN OPENSSH PRIVATE KEY-----
+          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
+          V0ZS5pbnRlcm5hbAECAwQFBgc=
+          -----END OPENSSH PRIVATE KEY-----
         source: "./*"  # Source is the root directory of the repository
         target: "/FruitsAndVegetablesService"  # Target directory on the remote server
 
