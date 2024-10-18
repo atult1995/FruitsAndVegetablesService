@@ -38,7 +38,7 @@ jobs:
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "./"  # Source is the root directory of the repository
+        source: "./*"  # Source is the root directory of the repository
         target: "/FruitsAndVegetablesService"  # Target directory on the remote server
 
     # Step 5: Restart the application using Docker Compose
