@@ -1,3 +1,4 @@
+#this is docker file
 version: "3"
 services:
   nosql-db:
