@@ -1,0 +1,57 @@
+name: Node.js CD for Microservices
+
+on:
+  push:
+    branches: [ main ]  # Triggers deployment on push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+	
+
+
+    steps:
+    # Step 1: Checkout the repository
+    - uses: actions/checkout@v2
+
+    # Step 2: Set up Node.js environment
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18.x'  # Specify the Node.js version you use
+
+    # Step 3: Install dependencies for all microservices
+    - name: Install dependencies for customer service
+      working-directory: ./customer  # Navigate to the customer service directory
+      run: npm install
+
+    - name: Install dependencies for product service
+      working-directory: ./product  # Navigate to the product service directory
+      run: npm install
+
+    - name: Install dependencies for shopping service
+      working-directory: ./shopping  # Navigate to the shopping service directory
+      run: npm install
+
+    # Step 4: Deploy to AWS EC2 or another remote server
+    - name: Deploy to AWS EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "./*"  # Source is the root directory of the repository
+        target: "/FruitsAndVegetablesService"  # Target directory on the remote server
+
+    # Step 5: Restart the application using Docker Compose
+    - name: Restart services with Docker Compose
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd FruitsAndVegetablesService  # Change to the directory where the app is deployed
+          docker-compose down  # Stop running services
+          docker-compose build  # Build the Docker images
+          docker-compose up -d  # Start the services in detached mode
