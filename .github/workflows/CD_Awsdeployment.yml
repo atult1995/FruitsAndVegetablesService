@@ -39,7 +39,7 @@ jobs:
         username: "ec2-user"
         key: ${{ secrets.SSH_PRIVATE_KEY }}  # Use secrets to store sensitive info
         source: "./*"  # Make sure this is correct
-        target: "/FruitsAndVegetablesService"
+        target: "FruitsAndVegetablesService"
 
     # Step 5: Restart services with Docker Compose
     - name: Restart services with Docker Compose
