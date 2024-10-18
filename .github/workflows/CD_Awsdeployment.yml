@@ -35,8 +35,8 @@ jobs:
     - name: Deploy to AWS EC2
       uses: appleboy/scp-action@master
       with:
-        host: "ec2-16-171-132-49.eu-north-1.compute.amazonaws.com"
-        username: "ec2-user"
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}  # Use secrets to store sensitive info
         source: "./*"  # Make sure this is correct
         target: "FruitsAndVegetablesService"
@@ -49,7 +49,7 @@ jobs:
         username: "ec2-user"
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd /FruitsAndVegetablesService  # Correct path
+          cd FruitsAndVegetablesService  # Correct path
           docker-compose down  # Stop running services
           docker-compose build  # Build the Docker images
           docker-compose up -d  # Start the services in detached mode
