@@ -25,14 +25,14 @@ jobs:
           # npm run lint
           npm ci
           npm test
-         # npm run test -- --coverage
+        # npm run test -- --coverage
 
       - name: Test Products Service
-        working-directory: ./products
+        working-directory: ./product
         run: |
-         # npm run lint
-          npm ci
-          npm test
+          # npm run lint
+           npm ci
+           npm test
 
       - name: Test Shopping Service
         working-directory: ./shopping
@@ -40,4 +40,3 @@ jobs:
           # npm run lint
           npm ci
           npm test
-          
